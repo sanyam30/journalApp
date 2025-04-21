@@ -1,6 +1,9 @@
 package com.practice.journalApp.controller;
 
-import com.practice.journalApp.JournalEntry;
+import com.practice.journalApp.entity.JournalEntry;
+import com.practice.journalApp.service.JournalEntryService;
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,29 +24,33 @@ public class JournalEntryController {
 
     Map<Long, JournalEntry> entries = new HashMap<>();
 
+    @Autowired
+    private JournalEntryService journalEntryService;
+
     @GetMapping
     public List<JournalEntry> getAllEntries(){
-        return new ArrayList<>(entries.values());
+        return journalEntryService.getAllEntries();
     }
 
     @PostMapping
-    public void createEntry(@RequestBody JournalEntry entry){
-        entries.put(entry.getId(),entry);
+    public JournalEntry createEntry(@RequestBody JournalEntry entry){
+        return journalEntryService.saveEntry(entry);
     }
 
     @GetMapping("/id/{id}")
-    public JournalEntry getEntryById(@PathVariable Long id){
-        return entries.get(id);
+    public JournalEntry getEntryById(@PathVariable ObjectId id){
+        return journalEntryService.findById(id);
     }
 
-    @PutMapping
-    public void updateEntry(@RequestBody JournalEntry entry){
-        entries.put(entry.getId(), entry);
+    @PutMapping("/id/{id}")
+    public JournalEntry updateEntry(@PathVariable ObjectId id, @RequestBody JournalEntry entry){
+        return journalEntryService.updateEntry(id,entry);
     }
 
     @DeleteMapping("/id/{id}")
-    public JournalEntry deleteEntry(@PathVariable Long id){
-        return entries.remove(id);
+    public boolean deleteEntry(@PathVariable ObjectId id){
+        journalEntryService.deleteById(id);
+        return true;
     }
 
 
