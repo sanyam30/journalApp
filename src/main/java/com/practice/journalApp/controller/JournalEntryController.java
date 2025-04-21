@@ -21,8 +21,6 @@ import java.util.*;
 @RequestMapping("/journal")
 public class JournalEntryController {
 
-    Map<Long, JournalEntry> entries = new HashMap<>();
-
     @Autowired
     private JournalEntryService journalEntryService;
 
