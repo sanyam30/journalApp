@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class JournalEntryService {
@@ -24,8 +25,8 @@ public class JournalEntryService {
         return journalEntryRepository.findAll();
     }
 
-    public JournalEntry findById(ObjectId id) {
-        return journalEntryRepository.findById(id).orElse(null);
+    public Optional<JournalEntry> findById(ObjectId id) {
+        return journalEntryRepository.findById(id);
     }
 
     public JournalEntry updateEntry(ObjectId id,JournalEntry entry) {
@@ -33,8 +34,9 @@ public class JournalEntryService {
         if(oldEntry!=null){
             oldEntry.setTitle(entry.getTitle()!=null && !entry.getTitle().isEmpty() ? entry.getTitle() : oldEntry.getTitle());
             oldEntry.setContent(entry.getContent()!=null && !entry.getContent().isEmpty() ? entry.getContent() : oldEntry.getContent());
+            journalEntryRepository.save(oldEntry);
         }
-        return journalEntryRepository.save(oldEntry);
+        return oldEntry;
     }
 
     public void deleteById(ObjectId id) {
