@@ -8,6 +8,8 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,18 +31,18 @@ public class JournalEntryController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("{username}")
-    public ResponseEntity<?> getAllEntriesOfUser(@PathVariable String username){
-        User user = userService.findByUserName(username);
+    @GetMapping
+    public ResponseEntity<?> getAllEntriesOfUser(){
+        User user = userService.findByUserName(getUsername());
         List<JournalEntry> allEntries = user.getJournalEntryList();
         return allEntries!=null && !allEntries.isEmpty() ? new ResponseEntity<>(allEntries, HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PostMapping("{username}")
-    public ResponseEntity<?> createEntry(@RequestBody JournalEntry entry, @PathVariable String username){
+    @PostMapping
+    public ResponseEntity<?> createEntry(@RequestBody JournalEntry entry){
         try{
-            journalEntryService.saveEntry(entry,username);
+            journalEntryService.saveEntry(entry,getUsername());
             return new ResponseEntity<>(entry,HttpStatus.CREATED);
         } catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -48,23 +50,38 @@ public class JournalEntryController {
 
     }
 
+    private String getUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
+    }
+
     @GetMapping("/id/{id}")
     public ResponseEntity<?> getEntryById(@PathVariable ObjectId id){
-        Optional<JournalEntry> entry = journalEntryService.findById(id);
-        if(entry.isPresent())
-            return new ResponseEntity<>(entry.get(),HttpStatus.OK);
+        User user = userService.findByUserName(getUsername());
+        boolean found = user.getJournalEntryList().stream().anyMatch(x -> x.getId().equals(id));
+        if(found){
+            Optional<JournalEntry> entry = journalEntryService.findById(id);
+            if(entry.isPresent())
+                return new ResponseEntity<>(entry.get(),HttpStatus.OK);
+        }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PutMapping("/id/{username}/{id}")
-    public ResponseEntity<?> updateEntry(@PathVariable ObjectId id, @PathVariable String username, @RequestBody JournalEntry entry){
-        JournalEntry journalEntry = journalEntryService.updateEntry(id, entry);
-        return journalEntry!=null ? new ResponseEntity<>(journalEntry,HttpStatus.OK) : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    @PutMapping("/id/{id}")
+    public ResponseEntity<?> updateEntry(@PathVariable ObjectId id, @RequestBody JournalEntry entry) {
+        String userName = getUsername();
+        User user = userService.findByUserName(getUsername());
+        boolean found = user.getJournalEntryList().stream().anyMatch(x -> x.getId().equals(id));
+        if (found) {
+            JournalEntry journalEntry = journalEntryService.updateEntry(id, entry);
+            return new ResponseEntity<>(journalEntry, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @DeleteMapping("/id/{username}/{id}")
-    public ResponseEntity<?> deleteEntry(@PathVariable ObjectId id, @PathVariable String username){
-        journalEntryService.deleteById(id,username);
+    @DeleteMapping("/id/{id}")
+    public ResponseEntity<?> deleteEntry(@PathVariable ObjectId id){
+        journalEntryService.deleteById(id,getUsername());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
