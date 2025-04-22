@@ -18,14 +18,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-
-    @GetMapping
-    public ResponseEntity<?> getAllUsers(){
-        List<User> users = userService.getAllUsers();
-        return users!=null && !users.isEmpty() ? new ResponseEntity<>(users, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
-
     @PutMapping
     public ResponseEntity<?> updateEntry(@RequestBody User updateUser){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
